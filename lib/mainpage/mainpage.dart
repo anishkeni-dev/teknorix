@@ -1,6 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:teknorix/mainpage/mainpage_provider.dart';
 import 'package:teknorix/repository/repository.dart';
 
 import '../detailpage/detailpage.dart';
@@ -15,19 +16,19 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   @override
-  ApiRepository repo = ApiRepository();
+  MainPageProvider provider = MainPageProvider();
   Future<dynamic> futureUserData = Future.value();
   MainPageStates state = MainPageInitial();
   ScrollController controller = ScrollController();
   List responseData = [];
-  Size screenSize = WidgetsBinding.instance.window.physicalSize;
+  late var count;
 
   var size = 4;
   late int maxSize;
 
   //gets main page state and api response data
   getUserData(int size) async {
-    state = await repo.getUsers(size);
+    state = await provider.getState(size);
     if (state is MainPageLoaded) {
       responseData = (state as MainPageLoaded).userData;
     } else {
@@ -37,11 +38,18 @@ class _MainPageState extends State<MainPage> {
   }
 
   getMaxSize() async {
-    maxSize = await repo.getMaxSize();
+    maxSize = await provider.getMaxSize();
     setState(() {});
   }
+  getCount() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    count = prefs.getInt('counter')!;
+    setState(() {
 
+    });
+  }
   void initState() {
+    getCount();
     // TODO: implement initState
     getMaxSize();
     getUserData(size);
@@ -93,6 +101,34 @@ class _MainPageState extends State<MainPage> {
           automaticallyImplyLeading: false,
           backgroundColor: Colors.black,
           centerTitle: true,
+          leading: IconButton(
+              icon: const Icon(
+                Icons.rocket_launch_outlined,
+                color: Colors.white,
+              ),
+              onPressed: (){
+                // bottom modal sheet four launch count
+                 showModalBottomSheet<void>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return Container(
+                        height: 200,
+                        color: Colors.black,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Text('App Launch Counter',style: TextStyle(color: Colors.white,fontSize: 22),),
+                              const Text('App has been launched',style: TextStyle(color: Colors.white,fontSize: 18),),
+                              Text("$count times so far!!!",style: const TextStyle(color: Colors.white,fontSize: 18),),
+
+                            ],
+                          ),
+                        ),
+                      );
+                    });
+              }),
           title: const Text(
             "Main Page",
             style: TextStyle(color: Colors.white),
@@ -104,7 +140,7 @@ class _MainPageState extends State<MainPage> {
                   children: [
                     Expanded(
                       child: ListView.builder(
-                        itemExtent: MediaQuery.of(context).size.height*0.3,
+                        itemExtent: MediaQuery.of(context).size.height * 0.3,
                         itemCount: responseData.length,
                         controller: controller,
                         itemBuilder: (context, index) => Container(
@@ -125,7 +161,7 @@ class _MainPageState extends State<MainPage> {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(25)),
                               child: Container(
-                                width: MediaQuery.of(context).size.width*0.5,
+                                width: MediaQuery.of(context).size.width * 0.5,
                                 padding: const EdgeInsets.all(10.0),
                                 child: Row(
                                   children: [
@@ -147,13 +183,14 @@ class _MainPageState extends State<MainPage> {
                                     ),
                                     //name
                                     Container(
-                                      width: MediaQuery.of(context).size.width*0.3,
+                                      width: MediaQuery.of(context).size.width *
+                                          0.3,
                                       margin: const EdgeInsets.only(left: 20),
                                       child: Text(
                                         responseData[index].firstName +
                                             " " +
                                             responseData[index].lastName,
-                                        maxLines:4,
+                                        maxLines: 4,
                                         style: TextStyle(
                                             fontSize: MediaQuery.of(context)
                                                     .devicePixelRatio *

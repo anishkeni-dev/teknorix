@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../mainpage/mainpage.dart';
 
@@ -28,10 +29,22 @@ class _StartPageState extends State<StartPage> {
     }
     setState(() {});
   }
+  appLaunchCounter()async{
+    // Obtain shared preferences.
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    var count = prefs.getInt('counter');
+    if(count==null){
+      count = 1;
+    }else{
+      count++;
+    }
+    await prefs.setInt('counter', count!);
+  }
 
   @override
   void initState() {
     // TODO: implement initState
+    appLaunchCounter();
     super.initState();
   }
 
