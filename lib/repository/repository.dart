@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:teknorix/deatailpage/detailspage_states.dart';
+import 'package:teknorix/mainpage/mainpage_states.dart';
 import 'package:teknorix/repository/services.dart';
 import 'package:teknorix/repository/user_model.dart';
 
@@ -16,11 +17,12 @@ class ApiRepository {
       User temp = User.fromJson(jsonData['data'][i]);
       userData.add(temp);
     }
-    return userData;
+    return MainPageLoaded(userData);
   }
 
    getUserById(userId) async {
-    List<User> userData = await getUsers();
+   var state =  await getUsers();
+    List<User> userData = (state as MainPageLoaded).userData;
     if(userData.isNotEmpty){
     for (var i = 0; i < userData.length; i++) {
       if (userData[i].id == userId) {

@@ -19,7 +19,9 @@ class _DetailPageState extends State<DetailPage> {
     if (state is DetailsPageLoaded) {
       futureUserData = Future.value((state as DetailsPageLoaded).userData);
     }
-    else state = DetailsPageError();
+    else {
+      state = DetailsPageError();
+    }
     setState(() {});
   }
 

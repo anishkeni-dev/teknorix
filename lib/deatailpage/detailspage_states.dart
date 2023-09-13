@@ -1,4 +1,4 @@
-
+//no specific reason to use this format, I just didn't want to use a state management library like bloc.
 
 import '../repository/user_model.dart';
 
