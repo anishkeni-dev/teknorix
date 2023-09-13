@@ -1,9 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:teknorix/repository/repository.dart';
-import 'package:teknorix/repository/services.dart';
 
-import '../deatailpage/deatailpage.dart';
+import '../detailpage/detailpage.dart';
 import 'mainpage_states.dart';
 
 class MainPage extends StatefulWidget {
@@ -18,25 +18,46 @@ class _MainPageState extends State<MainPage> {
   ApiRepository repo = ApiRepository();
   Future<dynamic> futureUserData = Future.value();
   MainPageStates state = MainPageInitial();
+  ScrollController controller = ScrollController();
+  List responseData = [];
+  Size screenSize = WidgetsBinding.instance.window.physicalSize;
+
+  var size = 4;
+  late int maxSize;
 
   //gets main page state and api response data
-  getUserData() async {
-    state = await repo.getUsers();
+  getUserData(int size) async {
+    state = await repo.getUsers(size);
     if (state is MainPageLoaded) {
-      futureUserData = Future.value((state as MainPageLoaded).userData);
+      responseData = (state as MainPageLoaded).userData;
     } else {
       state = MainPageError();
     }
-    setState(() {
+    setState(() {});
+  }
 
-    });
+  getMaxSize() async {
+    maxSize = await repo.getMaxSize();
+    setState(() {});
   }
 
   void initState() {
-    state = MainPageLoading();
     // TODO: implement initState
-    getUserData();
+    getMaxSize();
+    getUserData(size);
     super.initState();
+    controller = ScrollController()..addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    controller.removeListener(_scrollListener);
+    super.dispose();
+  }
+
+  getmore(size) async {
+    await getUserData(size);
+    addingMore = false;
   }
 
   @override
@@ -77,106 +98,111 @@ class _MainPageState extends State<MainPage> {
             style: TextStyle(color: Colors.white),
           ),
         ),
-        body: SingleChildScrollView(
-            child: Center(
-          child: Column(children: [
-            FutureBuilder(
-              future: futureUserData,
-              builder: (context, snapshot) => snapshot.hasError
-                  ? const Text("Something went wrong!")
-                  : snapshot.hasData && state is MainPageLoaded
-                      ? SizedBox(
-                          width: MediaQuery.of(context).size.width * 1,
-                          child: ListView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              itemBuilder: (context, index) => Container(
-                                    padding: const EdgeInsets.only(
-                                        left: 10, top: 10, right: 10),
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.6,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.2,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => DetailPage(
-                                                  id: snapshot.data[index].id),
-                                            ));
-                                      },
-                                      child: Card(
-                                        color: Colors.white,
-                                        elevation: 10,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(25)),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(10.0),
-                                          child: Row(
-                                            children: [
-                                              //image
-                                              ClipRRect(
-                                                borderRadius: BorderRadius.circular(
-                                                    10.0), // Adjust the radius to control corner roundness
-                                                child: Image.network(
-                                                  snapshot.data[index].avatar,
-                                                  height: MediaQuery.of(context)
-                                                          .size
-                                                          .height *
-                                                      0.2,
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .height *
-                                                      0.2,
-                                                  fit: BoxFit
-                                                      .cover, // You can choose different BoxFit options depending on your needs
-                                                ),
-                                              ),
-                                              //name
-                                              Container(
-                                                margin: const EdgeInsets.only(
-                                                    left: 20),
-                                                child: Text(
-                                                  snapshot.data[index]
-                                                          .firstName +
-                                                      " " +
-                                                      snapshot
-                                                          .data[index].lastName,
-                                                  style: TextStyle(
-                                                      fontSize: MediaQuery.of(
-                                                                  context)
-                                                              .devicePixelRatio *
-                                                          8,
-                                                      color: Colors.black),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+        body: state is MainPageLoaded
+            ? Scrollbar(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemExtent: MediaQuery.of(context).size.height*0.3,
+                        itemCount: responseData.length,
+                        controller: controller,
+                        itemBuilder: (context, index) => Container(
+                          padding: const EdgeInsets.only(
+                              left: 10, top: 10, right: 10),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        DetailPage(id: responseData[index].id),
+                                  ));
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              elevation: 10,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25)),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width*0.5,
+                                padding: const EdgeInsets.all(10.0),
+                                child: Row(
+                                  children: [
+                                    //image
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius to control corner roundness
+                                      child: Image.network(
+                                        responseData[index].avatar,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.2,
+                                        width:
+                                            MediaQuery.of(context).size.height *
+                                                0.2,
+                                        fit: BoxFit
+                                            .cover, // You can choose different BoxFit options depending on your needs
                                       ),
                                     ),
-                                  ),
-                              itemCount: snapshot.data.length),
-                        )
-                      : state is MainPageError
-                          ? Container(
-                              margin: EdgeInsets.only(
-                                  top:
-                                      MediaQuery.of(context).size.height * 0.4),
-                              child: Text((state as MainPageError).error))
-                          : state is MainPageLoading
-                              ? Container(
-                                  margin: EdgeInsets.only(
-                                      top: MediaQuery.of(context).size.height *
-                                          0.4),
-                                  child: const CircularProgressIndicator())
-                              : Container(),
-            )
-          ]),
-        )),
+                                    //name
+                                    Container(
+                                      width: MediaQuery.of(context).size.width*0.3,
+                                      margin: const EdgeInsets.only(left: 20),
+                                      child: Text(
+                                        responseData[index].firstName +
+                                            " " +
+                                            responseData[index].lastName,
+                                        maxLines:4,
+                                        style: TextStyle(
+                                            fontSize: MediaQuery.of(context)
+                                                    .devicePixelRatio *
+                                                8,
+                                            color: Colors.black),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    addingMore ? const CircularProgressIndicator() : SizedBox(),
+                  ],
+                ),
+              )
+            : state is MainPageError
+                ? Container(
+                    margin: EdgeInsets.only(
+                        top: MediaQuery.of(context).size.height * 0.4),
+                    child: Text((state as MainPageError).error))
+                : state is MainPageLoading
+                    ? Container(
+                        margin: EdgeInsets.only(
+                            top: MediaQuery.of(context).size.height * 0.4),
+                        child: const CircularProgressIndicator())
+                    : Container(),
       ),
     );
+  }
+
+  bool addingMore = false;
+  void _scrollListener() {
+    if (controller.position.extentAfter < controller.position.maxScrollExtent) {
+      setState(() {
+        addingMore = true;
+      });
+
+      if (size < maxSize) {
+        size++;
+      } else {
+        size = maxSize;
+      }
+      getmore(size);
+
+      setState(() {});
+    }
   }
 }

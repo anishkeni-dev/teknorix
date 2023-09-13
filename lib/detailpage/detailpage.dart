@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:teknorix/deatailpage/detailspage_states.dart';
 import 'package:teknorix/repository/repository.dart';
+
+import 'detailspage_states.dart';
 
 class DetailPage extends StatefulWidget {
   DetailPage({super.key, this.id});
